@@ -72,7 +72,7 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
   config :ssl_verify, :validate => :boolean, :default => false
 
   # Use client certificate and key to authenticate the client to the Syslog server
-  config :ssl_client_auth, :validate => :boolean, :default => false
+  config :ssl_client_auth, :validate => :boolean, :default => true
 
   # The SSL CA certificate, chainfile or CA path. The system CA path is automatically included.
   config :ssl_cacert, :validate => :path
