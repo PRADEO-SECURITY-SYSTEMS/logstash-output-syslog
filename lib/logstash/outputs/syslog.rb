@@ -71,7 +71,7 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
   # Verify the identity of the other end of the SSL connection against the CA.
   config :ssl_verify, :validate => :boolean, :default => false
 
-  # Verify the identity of the other end of the SSL connection against the CA.
+  # Use client certificate and key to authenticate the client to the Syslog server
   config :ssl_client_auth, :validate => :boolean, :default => false
 
   # The SSL CA certificate, chainfile or CA path. The system CA path is automatically included.
