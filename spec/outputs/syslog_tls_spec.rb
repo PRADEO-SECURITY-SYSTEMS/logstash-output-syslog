@@ -1,5 +1,4 @@
 # encoding: utf-8
-
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/outputs/syslog"
 require "logstash/codecs/plain"
@@ -90,7 +89,6 @@ describe LogStash::Outputs::Syslog do
           expect { subject.receive event }.to throw_symbol(:TEST_DONE)
         end
       end
-
     end
 
     context "server with revoked certificates" do
@@ -109,44 +107,61 @@ describe LogStash::Outputs::Syslog do
   context "read PEM" do
     let(:options) { { "host" => "localhost", "port" => port, "protocol" => "ssl-tcp", "ssl_verify" => true } }
 
-    context "invalid client certificate" do
-      let(:options ) { super().merge(
-        "ssl_cert" => File.join(FIXTURES_PATH, "invalid.pem"),
-        "ssl_key" => File.join(FIXTURES_PATH, "client-key.pem"),
-        "ssl_cacert" => File.join(FIXTURES_PATH, "ca.pem"),
-        "ssl_crl"  => File.join(FIXTURES_PATH, "ca-crl.pem")
-      ) }
+    context "ssl_client_auth disabled" do
+      let(:options ) { super().merge("ssl_client_auth" => false) }
 
-      it "register raises error" do
-        expect { subject.register }.to raise_error(OpenSSL::X509::CertificateError, /malformed PEM data/)
+      context "invalid certificate authority" do
+        let(:options ) { super().merge(
+          "ssl_cacert" => File.join(FIXTURES_PATH, "ca.pem"),
+        ) }
+
+        it "register raises error" do
+          expect { subject.register }.to raise_error(OpenSSL::X509::CertificateError, /malformed PEM data/)
+        end
       end
     end
 
-    context "invalid client private key" do
-      let(:options ) { super().merge(
-        "ssl_cert" => File.join(FIXTURES_PATH, "client.pem"),
-        "ssl_key" => File.join(FIXTURES_PATH, "invalid.pem"),
-        "ssl_cacert" => File.join(FIXTURES_PATH, "ca.pem"),
-        "ssl_crl"  => File.join(FIXTURES_PATH, "ca-crl.pem")
-      ) }
+    context "ssl_client_auth enabled" do
+      let(:options ) { super().merge("ssl_client_auth" => true) }
 
-      it "register raises error" do
-        expect { subject.register }.to raise_error(OpenSSL::PKey::RSAError, /Neither PUB key nor PRIV key/)
+      context "invalid client certificate" do
+        let(:options ) { super().merge(
+          "ssl_cert" => File.join(FIXTURES_PATH, "invalid.pem"),
+          "ssl_key" => File.join(FIXTURES_PATH, "client-key.pem"),
+          "ssl_cacert" => File.join(FIXTURES_PATH, "ca.pem"),
+          "ssl_crl"  => File.join(FIXTURES_PATH, "ca-crl.pem")
+        ) }
+
+        it "register raises error" do
+          expect { subject.register }.to raise_error(OpenSSL::X509::CertificateError, /malformed PEM data/)
+        end
+      end
+
+      context "invalid client private key" do
+        let(:options ) { super().merge(
+          "ssl_cert" => File.join(FIXTURES_PATH, "client.pem"),
+          "ssl_key" => File.join(FIXTURES_PATH, "invalid.pem"),
+          "ssl_cacert" => File.join(FIXTURES_PATH, "ca.pem"),
+          "ssl_crl"  => File.join(FIXTURES_PATH, "ca-crl.pem")
+        ) }
+
+        it "register raises error" do
+          expect { subject.register }.to raise_error(OpenSSL::PKey::RSAError, /Neither PUB key nor PRIV key/)
+        end
+      end
+
+      context "invalid CRL" do
+        let(:options ) { super().merge(
+          "ssl_cert" => File.join(FIXTURES_PATH, "client.pem"),
+          "ssl_key" => File.join(FIXTURES_PATH, "client-key.pem"),
+          "ssl_cacert" => File.join(FIXTURES_PATH, "ca.pem"),
+          "ssl_crl"  => File.join(FIXTURES_PATH, "invalid.pem")
+        ) }
+
+        it "register raises error" do
+          expect { subject.register }.to raise_error(OpenSSL::X509::CRLError, /malformed PEM data/)
+        end
       end
     end
-
-    context "invalid CRL" do
-      let(:options ) { super().merge(
-        "ssl_cert" => File.join(FIXTURES_PATH, "client.pem"),
-        "ssl_key" => File.join(FIXTURES_PATH, "client-key.pem"),
-        "ssl_cacert" => File.join(FIXTURES_PATH, "ca.pem"),
-        "ssl_crl"  => File.join(FIXTURES_PATH, "invalid.pem")
-      ) }
-
-      it "register raises error" do
-        expect { subject.register }.to raise_error(OpenSSL::X509::CRLError, /malformed PEM data/)
-      end
-    end
-
   end
 end

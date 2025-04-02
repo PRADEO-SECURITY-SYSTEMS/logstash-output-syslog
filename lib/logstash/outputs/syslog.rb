@@ -71,6 +71,9 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
   # Verify the identity of the other end of the SSL connection against the CA.
   config :ssl_verify, :validate => :boolean, :default => false
 
+  # Verify the identity of the other end of the SSL connection against the CA.
+  config :ssl_client_auth, :validate => :boolean, :default => false
+
   # The SSL CA certificate, chainfile or CA path. The system CA path is automatically included.
   config :ssl_cacert, :validate => :path
 
@@ -245,8 +248,10 @@ class LogStash::Outputs::Syslog < LogStash::Outputs::Base
   def setup_ssl
     require "openssl"
     ssl_context = OpenSSL::SSL::SSLContext.new
-    ssl_context.cert = OpenSSL::X509::Certificate.new(File.read(@ssl_cert))
-    ssl_context.key = OpenSSL::PKey::RSA.new(File.read(@ssl_key),@ssl_key_passphrase)
+    if @ssl_client_auth
+      ssl_context.cert = OpenSSL::X509::Certificate.new(File.read(@ssl_cert))
+      ssl_context.key = OpenSSL::PKey::RSA.new(File.read(@ssl_key),@ssl_key_passphrase)
+    end
     if @ssl_verify
       cert_store = OpenSSL::X509::Store.new
       # Load the system default certificate path to the store
